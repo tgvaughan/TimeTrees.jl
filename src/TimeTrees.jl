@@ -4,11 +4,16 @@ export Node, isRoot, addChild, edgeLength, Tree
 
 import Base.show
 
+"""
+The `Node` type is the basic element of any `TimeTree`. It
+defines attributes which include links to a parent and
+any children, the height of the node, and its label.
+"""
 type Node
     parent::Node
     children::Array{Node, 1}
-    height::FloatingPoint
-    label::String
+    height::AbstractFloat
+    label::AbstractString
 
     Node() = begin
         n = new()
@@ -34,15 +39,25 @@ function show(io::IO, n::Node)
     print(io, string(n.label, ":", edgeLength(n)))
 end
 
+"""
+Returns `true` if `n` is a root node.
+"""
 function isRoot(n::Node)
     return n.parent == n
 end
 
+"""
+Add node `c` as a child of node `n`.
+"""
 function addChild(n::Node, c::Node)
     c.parent = n
     push!(n.children, c)
 end
 
+"""
+Returns the length of the edge above node `n`.  Always
+returns 0 if `n` is a root node.
+"""
 function edgeLength(n::Node)
     if isRoot(n)
         return 0.0
@@ -51,6 +66,9 @@ function edgeLength(n::Node)
     end
 end
 
+"""
+A phylogenetic tree.
+"""
 type Tree
     root::Node
 end
@@ -60,24 +78,26 @@ function show(io::IO, t::Tree)
     print(io, ";")
 end
 
-# Assemble tree from Newick string
-function Tree(newick::String)
+"""
+Construct a `Tree` from a Newick string.
+"""
+function Tree(newick::AbstractString)
 
     ### Parser ###
 
-    patterns = {
+    patterns = Dict{AbstractString,Regex}(
         "open_paren" => r"^\(",
         "close_paren" => r"^\)",
         "colon" => r"^:",
         "comma" => r"^,",
         "number" => r"^\d+(\.\d*)?([eE]-?\d+)?",
         "string" => r"^((\w+)|(\"[^\"]*\")|(^'[^']*'))"
-    }
+    )
 
-    function matchToken(token::String; mustMatch = false)
+    function matchToken(token::AbstractString; mustMatch = false)
 
         # Skip whitespace
-        while isblank(newick[i]) && i<=length(newick)
+        while i<=length(newick) && (newick[i] == ' ' || newick[i] == '\t')
             i += 1
         end
 
@@ -123,7 +143,7 @@ function Tree(newick::String)
             return ""
         end
 
-        if beginswith(res, "\"") || beginswith(res, "'")
+        if startswith(res, "\"") || startswith(res, "'")
             return res[2:end-1]
         else
             return res
@@ -144,7 +164,7 @@ function Tree(newick::String)
 
     ### Post-processing ###
 
-    function getTime(node::Node, currentTime::FloatingPoint)
+    function getTime(node::Node, currentTime::AbstractFloat)
         currentTime += node.height
 
         maxTime = currentTime
@@ -155,7 +175,7 @@ function Tree(newick::String)
         return maxTime
     end
 
-    function branchLengthToHeight(node::Node, treeHeight::FloatingPoint, currentTime::FloatingPoint)
+    function branchLengthToHeight(node::Node, treeHeight::AbstractFloat, currentTime::AbstractFloat)
         currentTime += node.height
         node.height = treeHeight - currentTime
 
