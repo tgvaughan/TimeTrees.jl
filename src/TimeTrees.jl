@@ -1,6 +1,14 @@
+"""
+TimeTrees
+---------
+Basic rooted phylogenetic time tree manipulation module which includes Tree
+and Node classes.  The Tree class can be initialized from a Newick string
+and provides methods for producing visualizations using ASCII art.
+"""
 module TimeTrees
 
-export Node, isRoot, addChild, edgeLength, Tree
+export Node, isRoot, addChild, edgeLength, Tree,
+    getLeaves, getNodes
 
 import Base.show
 
@@ -47,6 +55,13 @@ function isRoot(n::Node)
 end
 
 """
+Returns `true` if `n` is a leaf node.
+"""
+function isLeaf(n::Node)
+    return length(n.children) == 0
+end
+
+"""
 Add node `c` as a child of node `n`.
 """
 function addChild(n::Node, c::Node)
@@ -64,6 +79,28 @@ function edgeLength(n::Node)
     else
         return n.parent.height - n.height
     end
+end
+
+function getLeaves(n::Node)
+    if isLeaf(n)
+        return [n]
+    else
+        res = []
+        for c in n.children
+            res = [res; getLeaves(c)]
+        end
+
+        return res
+    end
+end
+
+function getNodes(n::Node)
+    res = [n]
+    for c in n.children
+        res = [res; getNodes(c)]
+    end
+
+    return res
 end
 
 """
@@ -188,6 +225,13 @@ function Tree(newick::AbstractString)
     branchLengthToHeight(tree.root, height, 0.0)
 
     return tree
+end
+
+"""
+Produce an ASCII representation of a given Tree object.
+"""
+function plotASCII(tree::Tree, width = 70, labelLeaves = true)
+
 end
 
 end
