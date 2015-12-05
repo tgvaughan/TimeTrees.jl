@@ -8,7 +8,7 @@ and provides methods for producing visualizations using ASCII art.
 module TimeTrees
 
 export Node, isRoot, addChild, edgeLength, Tree,
-    getLeaves, getNodes
+    getLeaves, getNodes, getNewick, plot
 
 import Base.show
 
@@ -34,35 +34,56 @@ type Node
 end
 
 function show(io::IO, n::Node)
-    if length(n.children)>0
-        print(io, "(")
-        for i in 1:length(n.children)
-            if i > 1
-                print(io, ",")
-            end
-            show(io, n.children[i])
-        end
-        print(io, ")")
+    if isRoot(n)
+        print(io, "Root")
+    else
+        print(io, "Non-root")
     end
-    print(io, string(n.label, ":", edgeLength(n)))
+
+    print(io, " node (age: $(n.height), children: $(length(n.children))")
+
+    if length(n.label)>0
+        print(io,", label: $(n.label))")
+    else
+        print(io,", no label)")
+    end
+
 end
 
 """
-Returns `true` if `n` is a root node.
+`getNewick(n::Node)` retrieves the Newick representation of the subtree below `n`.
+"""
+function getNewick(n::Node)
+    res = ""
+    if length(n.children)>0
+        res = string(res, "(")
+        for i in 1:length(n.children)
+            if i > 1
+                res = string(res, ",")
+            end
+            res = string(res, getNewick(n.children[i]))
+        end
+        res = string(res, ")")
+    end
+    res = string(res, n.label, ":", edgeLength(n))
+end
+
+"""
+`isRoot(n::Node)` returns `true` if `n` is a root node.
 """
 function isRoot(n::Node)
     return n.parent == n
 end
 
 """
-Returns `true` if `n` is a leaf node.
+`isLeaf(n::Node)` returns `true` if `n` is a leaf node.
 """
 function isLeaf(n::Node)
     return length(n.children) == 0
 end
 
 """
-Add node `c` as a child of node `n`.
+`addChild(n::Node, c::Node)` adds node `c` as a child of node `n`.
 """
 function addChild(n::Node, c::Node)
     c.parent = n
@@ -70,7 +91,7 @@ function addChild(n::Node, c::Node)
 end
 
 """
-Returns the length of the edge above node `n`.  Always
+`edgeLength(n::Node)` returns the length of the edge above node `n`.  Always
 returns 0 if `n` is a root node.
 """
 function edgeLength(n::Node)
@@ -81,6 +102,9 @@ function edgeLength(n::Node)
     end
 end
 
+"""
+`getLeaves(n::Node)` returns array of leaf nodes below `n`.
+"""
 function getLeaves(n::Node)
     if isLeaf(n)
         return [n]
@@ -94,6 +118,9 @@ function getLeaves(n::Node)
     end
 end
 
+"""
+`getNodes(n::Node)` returns array of nodes below (and including) node `n`.
+"""
 function getNodes(n::Node)
     res = [n]
     for c in n.children
@@ -110,9 +137,31 @@ type Tree
     root::Node
 end
 
+"""
+`getLeaves(t::Tree)` returns array of leaf nodes `t` contains.
+"""
+function getLeaves(t::Tree)
+    return getLeaves(t.root)
+end
+
+"""
+`getNodes(t::Tree)` returns array of nodes that `t` contains.
+"""
+function getNodes(t::Tree)
+    return getNodes(t.root)
+end
+
 function show(io::IO, t::Tree)
-    show(io, t.root)
-    print(io, ";")
+    print(io, string("A phylogenetic tree with ",
+        length(getLeaves(t)), " leaves (",
+        length(getNodes(t)), " nodes in total)"))
+end
+
+"""
+`getNewick(t::Tree)` retrieves the Newick representation of `t`.
+"""
+function getNewick(t::Tree)
+    return string(getNewick(t.root), ";")
 end
 
 """
@@ -228,9 +277,78 @@ function Tree(newick::AbstractString)
 end
 
 """
-Produce an ASCII representation of a given Tree object.
+`plot(t::Tree)` produces an ASCII representation of `t`.
 """
-function plotASCII(tree::Tree, width = 70, labelLeaves = true)
+function plot(t::Tree, width = 70, labelLeaves = true)
+
+    leaves = getLeaves(t)
+    nodes = getNodes(t)
+    pos = zeros(length(nodes))
+
+    grid = fill(' ', length(leaves), width)
+
+    function computePos(n::Node)
+        idx = findfirst(nodes, n)
+        if isLeaf(n)
+            pos[idx] = findfirst(leaves, n)
+        else
+            for c in n.children
+                pos[idx] += computePos(c)
+            end
+            pos[idx] /= length(n.children)
+        end
+        return pos[idx]
+    end
+    computePos(t.root)
+
+    function heightToIdx(h::Float64)
+        return round(Int, h/t.root.height*(width-1) + 1)
+    end
+
+    # Edges
+    for i in 1:length(nodes)
+        n = nodes[i]
+
+        if isRoot(n)
+            continue
+        else
+            pi = findfirst(nodes, n.parent)
+            x1 = heightToIdx(nodes[i].height)
+            y1 = round(Int, pos[i])
+            x2 = heightToIdx(nodes[pi].height)
+            y2 = round(Int, pos[pi])
+            ymin = min(y1, y2)
+            ymax = max(y1, y2)
+
+            grid[y1,x1:x2] = '-'
+            grid[ymin:ymax, x2] = '|'
+            grid[ymin,x2] = '/'
+            grid[ymax,x2] = '\\'
+        end
+    end
+
+    # Nodes
+    for i in 1:length(nodes)
+        x = heightToIdx(nodes[i].height)
+        y = round(Int, pos[i])
+        if isLeaf(nodes[i])
+            grid[y, x] = '*'
+            if x>1 && labelLeaves
+                grid[y,x-1:-1:1] = '⋅'
+            end
+        else
+            grid[y, x] = '+'
+        end
+    end
+
+    # Display
+    for i in 1:length(leaves)
+        if labelLeaves
+            print(string(join(reverse(vec(grid[i,:]))), " ", leaves[i].label), "\n")
+        else
+            print(string(join(reverse(vec(grid[i,:])))))
+        end
+    end
 
 end
 
