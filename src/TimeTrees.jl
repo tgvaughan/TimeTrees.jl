@@ -344,9 +344,9 @@ function plot(t::TimeTree; width = 70, labelLeaves = true, dots = true)
     # Display
     for i in 1:length(leaves)
         if labelLeaves
-            print(string(join(reverse(vec(grid[i,:]))), " ", leaves[i].label), "\n")
+            println(string(join(reverse(vec(grid[i,:]))), " ", leaves[i].label))
         else
-            print(string(join(reverse(vec(grid[i,:])))))
+            println(string(join(reverse(vec(grid[i,:])))))
         end
     end
 
