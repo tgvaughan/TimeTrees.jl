@@ -1,13 +1,13 @@
 """
 TimeTrees
 ---------
-Basic rooted phylogenetic time tree manipulation module which includes Tree
-and Node classes.  The Tree class can be initialized from a Newick string
+Basic rooted phylogenetic time tree manipulation module which includes TimeTree
+and Node classes.  The TimeTree class can be initialized from a Newick string
 and provides methods for producing visualizations using ASCII art.
 """
 module TimeTrees
 
-export Node, isRoot, addChild, edgeLength, Tree,
+export Node, isRoot, addChild, edgeLength, TimeTree,
     getLeaves, getNodes, getNewick, plot
 
 import Base.show
@@ -133,41 +133,41 @@ end
 """
 A phylogenetic tree.
 """
-type Tree
+type TimeTree
     root::Node
 end
 
 """
-`getLeaves(t::Tree)` returns array of leaf nodes `t` contains.
+`getLeaves(t::TimeTree)` returns array of leaf nodes `t` contains.
 """
-function getLeaves(t::Tree)
+function getLeaves(t::TimeTree)
     return getLeaves(t.root)
 end
 
 """
-`getNodes(t::Tree)` returns array of nodes that `t` contains.
+`getNodes(t::TimeTree)` returns array of nodes that `t` contains.
 """
-function getNodes(t::Tree)
+function getNodes(t::TimeTree)
     return getNodes(t.root)
 end
 
-function show(io::IO, t::Tree)
+function show(io::IO, t::TimeTree)
     print(io, string("A phylogenetic tree with ",
         length(getLeaves(t)), " leaves (",
         length(getNodes(t)), " nodes in total)"))
 end
 
 """
-`getNewick(t::Tree)` retrieves the Newick representation of `t`.
+`getNewick(t::TimeTree)` retrieves the Newick representation of `t`.
 """
-function getNewick(t::Tree)
+function getNewick(t::TimeTree)
     return string(getNewick(t.root), ";")
 end
 
 """
-Construct a `Tree` from a Newick string.
+Construct a `TimeTree` from a Newick string.
 """
-function Tree(newick::AbstractString)
+function TimeTree(newick::AbstractString)
 
     ### Parser ###
 
@@ -202,7 +202,7 @@ function Tree(newick::AbstractString)
     end
 
     function ruleT()
-       return Tree(ruleN())
+       return TimeTree(ruleN())
     end
 
     function ruleN()
@@ -277,9 +277,9 @@ function Tree(newick::AbstractString)
 end
 
 """
-`plot(t::Tree)` produces an ASCII representation of `t`.
+`plot(t::TimeTree)` produces an ASCII representation of `t`.
 """
-function plot(t::Tree, width = 70, labelLeaves = true)
+function plot(t::TimeTree, width = 70, labelLeaves = true)
 
     leaves = getLeaves(t)
     nodes = getNodes(t)
