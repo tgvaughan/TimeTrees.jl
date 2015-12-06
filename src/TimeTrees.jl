@@ -7,8 +7,8 @@ and provides methods for producing visualizations using ASCII art.
 """
 module TimeTrees
 
-export Node, isRoot, addChild, edgeLength, TimeTree,
-    getLeaves, getNodes, getNewick, plot
+export Node, isRoot, addChild!, edgeLength, getDecendentCount, getSorted,
+    TimeTree, getLeaves, getNodes, getNewick, plot
 
 import Base.show
 
@@ -83,9 +83,9 @@ function isLeaf(n::Node)
 end
 
 """
-`addChild(n::Node, c::Node)` adds node `c` as a child of node `n`.
+`addChild!(n::Node, c::Node)` adds node `c` as a child of node `n`.
 """
-function addChild(n::Node, c::Node)
+function addChild!(n::Node, c::Node)
     c.parent = n
     push!(n.children, c)
 end
@@ -131,6 +131,38 @@ function getNodes(n::Node)
 end
 
 """
+`getDecendentCount(n::Node)` returns number of decendents below (and including) `n`.
+"""
+function getDecendentCount(n::Node)
+    res = 1
+    for c in n.children
+        res += getDecendentCount(c)
+    end
+
+    return res
+end
+
+"""
+`getSorted(n::Node)` produces a copy of the clade below `n`, sorted so that children
+appear in order of the number of decendents they have.
+"""
+function getSorted(n::Node)
+
+    copy = Node()
+    copy.label = n.label
+    copy.height = n.height
+
+    for c in n.children
+        addChild!(copy, getSorted(c))
+    end
+
+    perm = sortperm([getDecendentCount(c) for c in copy.children])
+    copy.children = copy.children[perm]
+
+    return copy
+end
+
+"""
 A phylogenetic tree.
 """
 type TimeTree
@@ -149,6 +181,14 @@ end
 """
 function getNodes(t::TimeTree)
     return getNodes(t.root)
+end
+
+"""
+`getSorted(t::TimeTree)` returns a copy of `t` in which children are
+sorted in order of the number of of their respective decendents.
+"""
+function getSorted(t::TimeTree)
+    return TimeTree(getSorted(t.root))
 end
 
 function show(io::IO, t::TimeTree)
@@ -209,7 +249,7 @@ function TimeTree(newick::AbstractString)
         node = Node()
         if matchToken("open_paren") != nothing
             while true
-                addChild(node, ruleN())
+                addChild!(node, ruleN())
                 if matchToken("comma") == nothing
                     break
                 end
