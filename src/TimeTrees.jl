@@ -1,21 +1,47 @@
 """
 TimeTrees
 ---------
+
 Basic rooted phylogenetic time tree manipulation module which includes TimeTree
-and Node classes.  The TimeTree class can be initialized from a Newick string
-and provides methods for producing visualizations using ASCII art.
+    and Node classes.  The TimeTree class can be initialized from a Newick
+    string and provides methods for producing visualizations using ASCII art.
+
+TimeTrees provides thw following two types:
+
+* `TimeTree`: a rooted phylogenetic time tree.
+* `Node`: the basic building block of a phylogenetic tree.
+
+Read the documentation for these types for further information.
 """
 module TimeTrees
 
-export Node, isRoot, addChild!, edgeLength, getDecendentCount, getSorted,
+export Node, isRoot, isLeaf, addChild!, edgeLength,
+    getDecendentCount, getSorted,
     TimeTree, getLeaves, getNodes, getNewick, plot
 
 import Base.show
 
 """
 The `Node` type is the basic element of any `TimeTree`. It
-defines attributes which include links to a parent and
-any children, the height of the node, and its label.
+defines the following attributes:
+
+* `parent`: the parent node. If the node is a root, then this
+attribute refers to the current node object.
+
+* `children`: the list of child nodes. If empty, this node is
+a leaf.
+
+* `height`: the height or age of the node (usually measured
+from the most recent sample/leaf node.
+
+* `label`: a (possibly empty) string labeling this node. Ofen
+only used for leaves.
+
+An empty node can be constructed using the `Node()` method.
+
+Several methods on nodes are defined: `isRoot`, `isLeaf`, `addChild!`,
+`edgeLength`, `getLeaves`, `getNodes`, `getSorted`, `getNewick`.  Read the
+documentation for these methods for further information.
 """
 type Node
     parent::Node
@@ -143,10 +169,11 @@ function getDecendentCount(n::Node)
 end
 
 """
-`getSorted(n::Node)` produces a copy of the clade below `n`, sorted so that children
-appear in order of the number of decendents they have.
+`getSorted(n::Node, [rev=false])` produces a copy of the clade below `n`,
+sorted so that children appear in order of the number of decendents they have.
+Setting `rev=true` reverses the sort.
 """
-function getSorted(n::Node)
+function getSorted(n::Node; rev = false)
 
     copy = Node()
     copy.label = n.label
@@ -156,14 +183,28 @@ function getSorted(n::Node)
         addChild!(copy, getSorted(c))
     end
 
-    perm = sortperm([getDecendentCount(c) for c in copy.children])
+    perm = sortperm([getDecendentCount(c) for c in copy.children], rev=rev)
     copy.children = copy.children[perm]
 
     return copy
 end
 
 """
-A phylogenetic tree.
+The `TimeTree` type represents a rooted phylogenetic tree.  It defines a
+single attribute `root::Node` which specifies the root node of the tree.
+
+`TimeTree` objects can be constructed in two ways:
+
+1. Using the default constructor `TimeTree(root::Node)` to create a tree
+with the given root node, and
+
+2. Using the constructor `TimeTree(newick::String)` which creates a
+tree by parsing a Newick string given as an argument.  For instance,
+`TimeTree("((A:1,B:1):1,C:2):0;")` constructs a tree with 3 leaves and
+a total height of two.
+
+There are several methods which act on trees: `getLeaves`,
+`getNodes`, `getSorted`, `getNewick` and `plot`.
 """
 type TimeTree
     root::Node
@@ -184,10 +225,10 @@ function getNodes(t::TimeTree)
 end
 
 """
-`getSorted(t::TimeTree)` returns a copy of `t` in which children are
+`getSorted(t::TimeTree, [rev=false])` returns a copy of `t` in which children are
 sorted in order of the number of of their respective decendents.
 """
-function getSorted(t::TimeTree)
+function getSorted(t::TimeTree; rev = false)
     return TimeTree(getSorted(t.root))
 end
 
