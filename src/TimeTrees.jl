@@ -279,7 +279,7 @@ end
 """
 `plot(t::TimeTree)` produces an ASCII representation of `t`.
 """
-function plot(t::TimeTree, width = 70, labelLeaves = true)
+function plot(t::TimeTree; width = 70, labelLeaves = true, dots = true)
 
     leaves = getLeaves(t)
     nodes = getNodes(t)
@@ -333,7 +333,7 @@ function plot(t::TimeTree, width = 70, labelLeaves = true)
         y = round(Int, pos[i])
         if isLeaf(nodes[i])
             grid[y, x] = '*'
-            if x>1 && labelLeaves
+            if x>1 && labelLeaves && dots
                 grid[y,x-1:-1:1] = '⋅'
             end
         else
