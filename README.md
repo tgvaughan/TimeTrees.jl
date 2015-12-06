@@ -1,5 +1,7 @@
 # TimeTrees
 
+[![Build Status](https://travis-ci.org/tgvaughan/TimeTrees.jl.svg?branch=master)](https://travis-ci.org/tgvaughan/TimeTrees.jl)
+
 A tiny package that implements the TimeTree type for representing
 fully-resolved phylogenetic time trees in Julia.  A constructor which generate
 `TimeTree`s from Newick strings is provided, as are methods for manipulating
