@@ -6,7 +6,7 @@ Basic rooted phylogenetic time tree manipulation module which includes TimeTree
     and Node classes.  The TimeTree class can be initialized from a Newick
     string and provides methods for producing visualizations using ASCII art.
 
-TimeTrees provides thw following two types:
+TimeTrees provides the following two types:
 
 * `TimeTree`: a rooted phylogenetic time tree.
 * `Node`: the basic building block of a phylogenetic tree.
@@ -202,6 +202,9 @@ with the given root node, and
 tree by parsing a Newick string given as an argument.  For instance,
 `TimeTree("((A:1,B:1):1,C:2):0;")` constructs a tree with 3 leaves and
 a total height of two.
+
+The root node of a `TimeTree` is accessible via the `TimeTree`'s `root`
+attribute.
 
 There are several methods which act on trees: `getLeaves`,
 `getNodes`, `getSorted`, `getNewick` and `plot`.
