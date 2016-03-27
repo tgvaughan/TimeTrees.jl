@@ -38,8 +38,8 @@ only used for leaves.
 An empty node can be constructed using the `Node()` method.
 
 Several methods on nodes are defined: `isRoot`, `isLeaf`, `addChild!`,
-`edgeLength`, `getLeaves`, `getInternalNodes`, `getSorted`, `getNewick`.
-Read the documentation for these methods for further information.
+`edgeLength`, `getLeaves`, `getInternalNodes`, `getSorted`, `getNewick`,
+`getCopy`.  Read the documentation for these methods for further information.
 """
 type Node
     parent::Node
@@ -192,6 +192,22 @@ function getSorted(n::Node; rev = false)
 end
 
 """
+`getCopy(n::Node)` produces a deep copy of the clade below `n`.
+"""
+function getCopy(n::Node)
+    copy = Node()
+    copy.label = n.label
+    copy.age = n.age
+
+    for c in n.children
+        addChild!(copy, getCopy(c))
+    end
+
+    return copy
+end
+
+
+"""
 The `TimeTree` type represents a rooted phylogenetic tree.  It defines a
 single attribute `root::Node` which specifies the root node of the tree.
 
@@ -209,7 +225,7 @@ The root node of a `TimeTree` is accessible via the `TimeTree`'s `root`
 attribute.
 
 There are several methods which act on trees: `getLeaves`,
-`getInternalNodes`, `getNodes`, `getSorted`, `getNewick` and `plot`.
+`getInternalNodes`, `getNodes`, `getSorted`, `getCopy`, `getNewick` and `plot`.
 """
 type TimeTree
     root::Node
@@ -246,6 +262,13 @@ sorted in order of the number of of their respective decendents.
 """
 function getSorted(t::TimeTree; rev = false)
     return TimeTree(getSorted(t.root))
+end
+
+"""
+`getCopy(t::TimeTree)` returns a deep copy of `t`.
+"""
+function getCopy(t::TimeTree)
+    return TimeTree(getCopy(t.root))
 end
 
 function show(io::IO, t::TimeTree)
