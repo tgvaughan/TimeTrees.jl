@@ -210,9 +210,10 @@ There are several methods which act on trees: `getLeaves`,
 type TimeTree
     root::Node
     leaves::Array{Node,1}
+    nodes::Array{Node,1}
 end
 
-TimeTree(root::Node) = TimeTree(root, getLeaves(root))
+TimeTree(root::Node) = TimeTree(root, getLeaves(root), getNodes(root))
 
 """
 `getLeaves(t::TimeTree)` returns array of leaf nodes `t` contains.
@@ -225,7 +226,7 @@ end
 `getNodes(t::TimeTree)` returns array of nodes that `t` contains.
 """
 function getNodes(t::TimeTree)
-    return getNodes(t.root)
+    return t.nodes
 end
 
 """
