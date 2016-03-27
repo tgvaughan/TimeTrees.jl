@@ -6,8 +6,6 @@ Basic rooted phylogenetic time tree manipulation module which includes TimeTree
     and Node classes.  The TimeTree class can be initialized from a Newick
     string and provides methods for producing visualizations using ASCII art.
 
-TimeTrees provides the following two types:
-
 * `TimeTree`: a rooted phylogenetic time tree.
 * `Node`: the basic building block of a phylogenetic tree.
 
@@ -31,7 +29,7 @@ attribute refers to the current node object.
 * `children`: the list of child nodes. If empty, this node is
 a leaf.
 
-* `height`: the height or age of the node (usually measured
+* `age`: the age or age of the node (usually measured
 from the most recent sample/leaf node.
 
 * `label`: a (possibly empty) string labeling this node. Ofen
@@ -46,14 +44,14 @@ documentation for these methods for further information.
 type Node
     parent::Node
     children::Array{Node, 1}
-    height::AbstractFloat
+    age::AbstractFloat
     label::AbstractString
 
     Node() = begin
         n = new()
         n.parent = n
         n.children = []
-        n.height = 0.0
+        n.age = 0.0
         n.label = ""
         return n
     end
@@ -66,7 +64,7 @@ function show(io::IO, n::Node)
         print(io, "Non-root")
     end
 
-    print(io, " node (age: $(n.height), children: $(length(n.children))")
+    print(io, " node (age: $(n.age), children: $(length(n.children))")
 
     if length(n.label)>0
         print(io,", label: $(n.label))")
@@ -124,7 +122,7 @@ function edgeLength(n::Node)
     if isRoot(n)
         return 0.0
     else
-        return n.parent.height - n.height
+        return n.parent.age - n.age
     end
 end
 
@@ -177,7 +175,7 @@ function getSorted(n::Node; rev = false)
 
     copy = Node()
     copy.label = n.label
-    copy.height = n.height
+    copy.age = n.age
 
     for c in n.children
         addChild!(copy, getSorted(c))
@@ -201,7 +199,7 @@ with the given root node, and
 2. Using the constructor `TimeTree(newick::String)` which creates a
 tree by parsing a Newick string given as an argument.  For instance,
 `TimeTree("((A:1,B:1):1,C:2):0;")` constructs a tree with 3 leaves and
-a total height of two.
+a total age of two.
 
 The root node of a `TimeTree` is accessible via the `TimeTree`'s `root`
 attribute.
@@ -302,7 +300,7 @@ function TimeTree(newick::AbstractString)
         end
 
         node.label = ruleL()
-        node.height = ruleH()
+        node.age = ruleH()
 
         return node
     end
@@ -335,7 +333,7 @@ function TimeTree(newick::AbstractString)
     ### Post-processing ###
 
     function getTime(node::Node, currentTime::AbstractFloat)
-        currentTime += node.height
+        currentTime += node.age
 
         maxTime = currentTime
         for child in node.children
@@ -346,16 +344,16 @@ function TimeTree(newick::AbstractString)
     end
 
     function branchLengthToHeight(node::Node, treeHeight::AbstractFloat, currentTime::AbstractFloat)
-        currentTime += node.height
-        node.height = treeHeight - currentTime
+        currentTime += node.age
+        node.age = treeHeight - currentTime
 
         for child in node.children
             branchLengthToHeight(child, treeHeight, currentTime)
         end
     end
 
-    height = getTime(tree.root, 0.0)
-    branchLengthToHeight(tree.root, height, 0.0)
+    age = getTime(tree.root, 0.0)
+    branchLengthToHeight(tree.root, age, 0.0)
 
     return tree
 end
@@ -385,8 +383,8 @@ function plot(t::TimeTree; width = 70, labelLeaves = true, dots = true)
     end
     computePos(t.root)
 
-    function heightToIdx(h::Float64)
-        return round(Int, h/t.root.height*(width-1) + 1)
+    function ageToIdx(h::Float64)
+        return round(Int, h/t.root.age*(width-1) + 1)
     end
 
     # Edges
@@ -397,9 +395,9 @@ function plot(t::TimeTree; width = 70, labelLeaves = true, dots = true)
             continue
         else
             pi = findfirst(nodes, n.parent)
-            x1 = heightToIdx(nodes[i].height)
+            x1 = ageToIdx(nodes[i].age)
             y1 = round(Int, pos[i])
-            x2 = heightToIdx(nodes[pi].height)
+            x2 = ageToIdx(nodes[pi].age)
             y2 = round(Int, pos[pi])
             ymin = min(y1, y2)
             ymax = max(y1, y2)
@@ -413,7 +411,7 @@ function plot(t::TimeTree; width = 70, labelLeaves = true, dots = true)
 
     # Nodes
     for i in 1:length(nodes)
-        x = heightToIdx(nodes[i].height)
+        x = ageToIdx(nodes[i].age)
         y = round(Int, pos[i])
         if isLeaf(nodes[i])
             grid[y, x] = '*'
