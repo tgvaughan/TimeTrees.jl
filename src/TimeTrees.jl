@@ -15,7 +15,7 @@ module TimeTrees
 
 export Node, isRoot, isLeaf, addChild!, edgeLength,
     getDecendentCount, getSorted,
-    TimeTree, getLeaves, getNodes, getNewick, plot
+    TimeTree, getLeaves, getNodes, getInternalNodes, getNewick, plot
 
 import Base.show
 
@@ -38,8 +38,8 @@ only used for leaves.
 An empty node can be constructed using the `Node()` method.
 
 Several methods on nodes are defined: `isRoot`, `isLeaf`, `addChild!`,
-`edgeLength`, `getLeaves`, `getNodes`, `getSorted`, `getNewick`.  Read the
-documentation for these methods for further information.
+`edgeLength`, `getLeaves`, `getInternalNodes`, `getSorted`, `getNewick`.
+Read the documentation for these methods for further information.
 """
 type Node
     parent::Node
@@ -143,15 +143,19 @@ function getLeaves(n::Node)
 end
 
 """
-`getNodes(n::Node)` returns array of nodes below (and including) node `n`.
+`getInternalNodes(n::Node)` returns array of internal nodes below (and including) node `n`.
 """
-function getNodes(n::Node)
-    res = [n]
-    for c in n.children
-        res = [res; getNodes(c)]
-    end
+function getInternalNodes(n::Node)
+    if isLeaf(n)
+        return []
+    else
+        res = [n]
+        for c in n.children
+            res = [res; getInternalNodes(c)]
+        end
 
-    return res
+        return res
+    end
 end
 
 """
@@ -205,28 +209,35 @@ The root node of a `TimeTree` is accessible via the `TimeTree`'s `root`
 attribute.
 
 There are several methods which act on trees: `getLeaves`,
-`getNodes`, `getSorted`, `getNewick` and `plot`.
+`getInternalNodes`, `getNodes`, `getSorted`, `getNewick` and `plot`.
 """
 type TimeTree
     root::Node
     leaves::Array{Node,1}
-    nodes::Array{Node,1}
+    internalNodes::Array{Node,1}
 end
 
-TimeTree(root::Node) = TimeTree(root, getLeaves(root), getNodes(root))
+TimeTree(root::Node) = TimeTree(root, getLeaves(root), getInternalNodes(root))
 
 """
-`getLeaves(t::TimeTree)` returns array of leaf nodes `t` contains.
+`getLeaves(t::TimeTree)` returns array of leaf nodes that `t` contains.
 """
 function getLeaves(t::TimeTree)
     return t.leaves
 end
 
 """
+`getInternalNodes(t::TimeTree)` returns an array of internal nodes that `t` contains.
+"""
+function getInternalNodes(t::TimeTree)
+    return t.internalNodes
+end
+
+"""
 `getNodes(t::TimeTree)` returns array of nodes that `t` contains.
 """
 function getNodes(t::TimeTree)
-    return t.nodes
+    return [t.leaves; t.internalNodes]
 end
 
 """
