@@ -193,7 +193,7 @@ single attribute `root::Node` which specifies the root node of the tree.
 
 `TimeTree` objects can be constructed in two ways:
 
-1. Using the default constructor `TimeTree(root::Node)` to create a tree
+1. Using the constructor `TimeTree(root::Node)` to create a tree
 with the given root node, and
 
 2. Using the constructor `TimeTree(newick::String)` which creates a
@@ -209,13 +209,16 @@ There are several methods which act on trees: `getLeaves`,
 """
 type TimeTree
     root::Node
+    leaves::Array{Node,1}
 end
+
+TimeTree(root::Node) = TimeTree(root, getLeaves(root))
 
 """
 `getLeaves(t::TimeTree)` returns array of leaf nodes `t` contains.
 """
 function getLeaves(t::TimeTree)
-    return getLeaves(t.root)
+    return t.leaves
 end
 
 """
