@@ -14,7 +14,7 @@ Read the documentation for these types for further information.
 module TimeTrees
 
 export Node, isRoot, isLeaf, addChild!, edgeLength,
-    getDecendentCount, getSorted,
+    getDecendentCount, getSorted, getCopy,
     TimeTree, getLeaves, getNodes, getInternalNodes, getNewick, plot
 
 import Base.show
