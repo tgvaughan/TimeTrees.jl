@@ -35,6 +35,9 @@ from the most recent sample/leaf node.
 * `label`: a (possibly empty) string labeling this node. Ofen
 only used for leaves.
 
+* `number`: an integer used to uniquely identify the node in a tree.
+    This is set to -1 by default.
+
 An empty node can be constructed using the `Node()` method.
 
 Several methods on nodes are defined: `isRoot`, `isLeaf`, `addChild!`,
@@ -44,8 +47,9 @@ Several methods on nodes are defined: `isRoot`, `isLeaf`, `addChild!`,
 type Node
     parent::Node
     children::Array{Node, 1}
-    age::AbstractFloat
-    label::AbstractString
+    age::Float64
+    label::ASCIIString
+    number::Int
 
     Node() = begin
         n = new()
@@ -53,6 +57,7 @@ type Node
         n.children = []
         n.age = 0.0
         n.label = ""
+        n.number = -1
         return n
     end
 end
@@ -95,16 +100,12 @@ end
 """
 `isRoot(n::Node)` returns `true` if `n` is a root node.
 """
-function isRoot(n::Node)
-    return n.parent == n
-end
+isRoot(n::Node) = n.parent == n
 
 """
 `isLeaf(n::Node)` returns `true` if `n` is a leaf node.
 """
-function isLeaf(n::Node)
-    return length(n.children) == 0
-end
+isLeaf(n::Node) = length(n.children) == 0
 
 """
 `addChild!(n::Node, c::Node)` adds node `c` as a child of node `n`.
@@ -229,47 +230,58 @@ There are several methods which act on trees: `getLeaves`,
 """
 type TimeTree
     root::Node
-    leaves::Array{Node,1}
-    internalNodes::Array{Node,1}
+    nodes::Array{Node,1}
+    nLeaves::Int
+    nNodes::Int
 end
 
-TimeTree(root::Node) = TimeTree(root, getLeaves(root), getInternalNodes(root))
+function TimeTree(root::Node)
+    leaves = getLeaves(root)
+    internals = getInternalNodes(root)
+
+    nodes = [leaves; internals]
+    for (i, node) in enumerate(nodes)
+        node.number = i
+    end
+
+    TimeTree(root, nodes, length(leaves), length(nodes))
+end
 
 """
 `getLeaves(t::TimeTree)` returns array of leaf nodes that `t` contains.
 """
-function getLeaves(t::TimeTree)
-    return t.leaves
-end
+getLeaves(t::TimeTree) = slice(t.nodes, 1:t.nLeaves)
+
+"""
+`getLeafCount(t::TimeTree)` returns the number of leaves in the tree.
+"""
+getLeafCount(t::TimeTree) = t.nLeaves
+
+"""
+`getNodeCount(t::TimeTree)` returns the number of nodes in the tree.
+"""
+getNodeCount(t::TimeTree) = t.nNodes
 
 """
 `getInternalNodes(t::TimeTree)` returns an array of internal nodes that `t` contains.
 """
-function getInternalNodes(t::TimeTree)
-    return t.internalNodes
-end
+getInternalNodes(t::TimeTree) = slice(t.nodes, (t.nLeaves+1):t.nNodes)
 
 """
 `getNodes(t::TimeTree)` returns array of nodes that `t` contains.
 """
-function getNodes(t::TimeTree)
-    return [t.leaves; t.internalNodes]
-end
+getNodes(t::TimeTree) = t.nodes
 
 """
 `getSorted(t::TimeTree, [rev=false])` returns a copy of `t` in which children are
 sorted in order of the number of of their respective decendents.
 """
-function getSorted(t::TimeTree; rev = false)
-    return TimeTree(getSorted(t.root))
-end
+getSorted(t::TimeTree; rev = false) = TimeTree(getSorted(t.root))
 
 """
 `getCopy(t::TimeTree)` returns a deep copy of `t`.
 """
-function getCopy(t::TimeTree)
-    return TimeTree(getCopy(t.root))
-end
+getCopy(t::TimeTree) = TimeTree(getCopy(t.root))
 
 function show(io::IO, t::TimeTree)
     print(io, string("A phylogenetic tree with ",
@@ -280,9 +292,7 @@ end
 """
 `getNewick(t::TimeTree)` retrieves the Newick representation of `t`.
 """
-function getNewick(t::TimeTree)
-    return string(getNewick(t.root), ";")
-end
+getNewick(t::TimeTree) = string(getNewick(t.root), ";")
 
 """
 Construct a `TimeTree` from a Newick string.
