@@ -15,7 +15,9 @@ module TimeTrees
 
 export Node, isRoot, isLeaf, addChild!, edgeLength,
     getDecendentCount, getSorted, getCopy,
-    TimeTree, getLeaves, getNodes, getInternalNodes, getNewick, plot
+    TimeTree, getLeaves, getNodes, getInternalNodes,
+    getLeafCount, getNodeCount,
+    getNewick, plot
 
 import Base.show
 
