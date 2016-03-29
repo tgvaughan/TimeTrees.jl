@@ -226,7 +226,8 @@ The root node of a `TimeTree` is accessible via the `TimeTree`'s `root`
 attribute.
 
 There are several methods which act on trees: `getLeaves`,
-`getInternalNodes`, `getNodes`, `getSorted`, `getCopy`, `getNewick` and `plot`.
+`getInternalNodes`, `getNodes`, `getLeafCount`, `getNodeCount`,
+`getSorted`, `getCopy`, `getNewick` and `plot`.
 """
 type TimeTree
     root::Node
