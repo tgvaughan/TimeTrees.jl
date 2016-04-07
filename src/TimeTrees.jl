@@ -50,7 +50,8 @@ type Node
     parent::Node
     children::Array{Node, 1}
     age::Float64
-    label::ASCIIString
+    label::AbstractString
+    annotation::Dict{AbstractString,AbstractString}
     number::Int
 
     Node() = begin
@@ -59,6 +60,7 @@ type Node
         n.children = []
         n.age = 0.0
         n.label = ""
+        n.annotation = Dict{AbstractString,AbstractString}()
         n.number = -1
         return n
     end
@@ -307,6 +309,9 @@ function TimeTree(newick::AbstractString)
     patterns = Dict{AbstractString,Regex}(
         "open_paren" => r"^\(",
         "close_paren" => r"^\)",
+        "open_an" => r"^\[&",
+        "close_an" => r"^\]",
+        "eq" => r"^=",
         "colon" => r"^:",
         "comma" => r"^,",
         "number" => r"^\d+(\.\d*)?([eE]-?\d+)?",
@@ -351,7 +356,8 @@ function TimeTree(newick::AbstractString)
         end
 
         node.label = ruleL()
-        node.age = ruleH()
+        node.annotation = ruleA()
+        node.height = ruleH()
 
         return node
     end
@@ -367,6 +373,38 @@ function TimeTree(newick::AbstractString)
         else
             return res
         end
+    end
+
+    function ruleA()
+        res = Dict{AbstractString, AbstractString}()
+
+        if matchToken("open_an") == nothing
+            return res
+        end
+
+        while true
+            key = matchToken("number")
+            if key == nothing
+                key = matchToken("string", mustMatch = true)
+            end
+
+            matchToken("eq", mustMatch = true)
+
+            value = matchToken("number")
+            if value == nothing
+                value = matchToken("string", mustMatch = true)
+            end
+
+            res[key] = value
+
+            if matchToken("comma") == nothing
+                break
+            end
+        end
+
+        matchToken("close_an", mustMatch = true)
+
+        return res
     end
 
     function ruleH()
@@ -411,6 +449,11 @@ end
 
 """
 `plot(t::TimeTree)` produces an ASCII representation of `t`.
+Optional arguments are
+
+* `width`: the number of columns used for the plot (default 70) 
+* `labelLeaves`: whether to label the leaves (default true)
+* `dots`: whether to connect leaves to labels using dots (default true)
 """
 function plot(t::TimeTree; width = 70, labelLeaves = true, dots = true)
 
