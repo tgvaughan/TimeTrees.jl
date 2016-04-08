@@ -357,7 +357,7 @@ function TimeTree(newick::AbstractString)
 
         node.label = ruleL()
         node.annotation = ruleA()
-        node.height = ruleH()
+        node.age = ruleH()
 
         return node
     end
